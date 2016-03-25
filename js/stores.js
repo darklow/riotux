@@ -11,7 +11,6 @@ function CarStore ( ) {
   riot.observable(this);
   // listen to 'start' event
   this.on('start', function ( person ) {
-    console.log(person + ' started the car.')
     riotux.emmit('carMoving', person);
   });
 };
