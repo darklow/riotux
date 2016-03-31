@@ -75,19 +75,19 @@ display: inline-block;
   margin-top: 0;
   margin-bottom: 0.1rem;
   font-weight: 100;
-  font-size: 7rem;}
+  font-size: 7.25rem;}
 
 @media screen and (min-width: 64em) {
   .project-name {
-    font-size: 4.25rem; } }
+    font-size: 7.25rem; } }
 
 @media screen and (min-width: 42em) and (max-width: 64em) {
   .project-name {
-    font-size: 3.25rem; } }
+    font-size: 6.25rem; } }
 
 @media screen and (max-width: 42em) {
   .project-name {
-    font-size: 2.75rem; } }
+    font-size: 5.75rem; } }
 
 .project-tagline {
   margin-bottom: 2rem;
