@@ -15,21 +15,23 @@
      * @name  _currentState
      * @description The current state for state that will be changed
      */
-    var _currentState;
+    var _currentState
+      , _state_muttable // the copy of immutable state from store
+    ;
     /**
      * @name  the store state and mutations
      * @type { Object }
      */
-    var _store = {
+    var _store_immutable = {
       dispatch: function ( name ) {
         var _slice = Array.prototype.slice.call(arguments, 1)
-          , state = [_store.state]
+          , state = [_state_muttable]
           , args = state.concat(_slice)
         ;
         return Promise
-          .resolve(_store.mutations[name].apply(null, args))
+          .resolve(_store_immutable.mutations[name].apply(null, args))
           .then(function ( ) {
-            _store.update();
+            _store_immutable.update();
           });
         },
       /**
@@ -45,7 +47,7 @@
        * @param  { array } states Array that contain the states
        */
       subscribe: function ( component, states, handler ) {
-        _store.tags.push({ component: component, states: states, handler:handler });
+        _store_immutable.tags.push({ component: component, states: states, handler:handler });
       },
       /**
        * @name  unsubscribe
@@ -53,9 +55,9 @@
        * @param  { Component instance } tag Your component
        */
       unsubscribe: function ( tag ) {
-        _store.tags.forEach(function( el, i ) { 
+        _store_immutable.tags.forEach(function( el, i ) { 
           if ( el.component === tag ) {
-            _store.tags.splice(i, 1);
+            _store_immutable.tags.splice(i, 1);
           }
         });
       },
@@ -64,10 +66,10 @@
        * @description Execute the component handler, because the state changed
        */
       update: function ( ) {
-        _store.tags.forEach(function ( el, index, arr ) {
+        _store_immutable.tags.forEach(function ( el, index, arr ) {
           if ( el.states.indexOf(_currentState) !== -1 ) {
             if (typeof el.handler === "function") {
-              el.handler( _currentState, _store.state[_currentState] );
+              el.handler( _currentState, _state_muttable[_currentState] );
             }
           }
         });
@@ -88,7 +90,7 @@
 
     riotux.prototype = {
       listen: function ( callback ) {
-        _store.addListener( callback );
+        _store_immutable.addListener( callback );
       },
 
       /**
@@ -99,7 +101,7 @@
        * @param { Function } handler The function that you use to update your component when the each state change
        */
       subscribe: function ( component, states, handler ) {
-        _store.subscribe(component, states, handler);
+        _store_immutable.subscribe(component, states, handler);
       },
       /**
        * @name unsubscribe
@@ -107,7 +109,7 @@
        * @param  { string } component The Component instance
        */
       unsubscribe: function ( component ) {
-        _store.unsubscribe(component);
+        _store_immutable.unsubscribe(component);
       },
       /**
        * @name Store
@@ -115,7 +117,8 @@
        * @return { object } Return the store
        */
       Store: function ( data ) {
-        _store = Object.assign(_store, data);
+        _store_immutable = Object.assign(_store_immutable, data);
+        _state_muttable = Object.assign({}, _store_immutable.state);
       },  
       /**
        * @name  Actions
@@ -133,12 +136,13 @@
        */
       action: function ( ) {
         _currentState = arguments[0];
+        
         // pass just the method dispatch to action
-        var store_to_action = { dispatch: _store.dispatch }
+        var store_to_action = { dispatch: _store_immutable.dispatch }
           , store = [store_to_action]
           , args
         ;
-        if (_store.state[_currentState] !== undefined ) {
+        if (_store_immutable.state[_currentState] !== undefined ) {
           args = store.concat(Array.prototype.slice.call(arguments, 2));
           this.actions[arguments[1]].apply(null, args);
         } else {
@@ -148,10 +152,10 @@
       },
       /**
        * @name getter
-       * @param  { string } name The name of state
+       * @param  { string } name The name of Immutable state
        */
       getter: function ( name ) {
-        return _store.state[name];
+        return _store_immutable.state[name];
       }
     };
     return new riotux;
