@@ -44,7 +44,7 @@ In riotux data flow is unidirectional, as it should be in Flux:
 ### Store:
 The **Store** is basically a container that holds your application state. There are two things that makes a riotux Store different:
 
- * The Store are **Imutable**. riotux creates a copy of your Store and all modifications  happens in the copy of your original Store.
+ * The Store are **Immutable**. riotux creates a copy of your Store and all modifications  happens in the copy of your original Store.
 
  * When some changes happens in the copy of your original Store, your component can observe and can be notified.
 
