@@ -1,8 +1,8 @@
 # riotux  [![npm package](https://img.shields.io/badge/npm-1.0.6-blue.svg)](https://www.npmjs.com/package/riotux)
-> A centralized state management inspired in Flux and Redux.
+> A centralized immutable state management inspired in Flux and Redux.
 
-## Intro 
-**riotux** is a centralized state management for Javascript applications. It is inspired by Flux and Redux, but with simplified concepts.
+## Intro
+**riotux** is a centralized immutable state management. It is inspired by Flux and Redux, but with simplified concepts.
 
 <p align="center">
   <img src="test/img/react-riotux.gif" alt="react count" width="600">
@@ -18,34 +18,35 @@
 * Cdn: ``` <script src="https://cdnjs.cloudflare.com/ajax/libs/riotux/1.0.6/riotux.min.js"></script> ```
 
 
-### Why you need riotux?
-If your app is simple enough, you probably don't need riotux. Don't apply it prematurely. But if you are building a medium-to-large-scale SPA, chances are you have run into situations that make you think about how to better structure things outside of your components. This is where riotux comes into play.
+### How it works?
+The component triggers action calls. Actions dispatch mutations, that works with a copy of your Store state, that is mutable.
+Your **original Store state is immutable**.
 
 ### Reasons to use:
 * Tiny size: ~1.3kb
 * Simple and minimalistic API
+* Immutable Store state
 * Single state tree
-* Immutable state
 * Unidirectional data flow
 
 ### Data Flow
 In riotux data flow is unidirectional, as it should be in Flux:
 
 * The component triggers action calls;
-* Actions dispatch mutations that change the state;
-* Changes in state flow from the store back into the component via riotux obervables.
+* Actions dispatch mutations that will return a new state value without modify your Store state, beacuse works with a copy of your Store;
+* New value state returns to your component.
 
 ### Principles:
-* Application state is held in the store, as a single object. 
-* The only way to mutate the state is by dispatching mutations on the store.
-* Mutations must be synchronous, and the only side effects they produce should be mutating the state.
+* Immutable Application state is held in the Store, as a single object.
+* Mutations works with a copy of your Store state.
+* Mutations must be synchronous and Actions can be async.
 
-### Store: 
-The **store** is basically a container that holds your application state. There are two things that makes a riotux store different:
+### Store:
+The **Store** is basically a container that holds your application state. There are two things that makes a riotux Store different:
 
- * The store are **reactive**. Your component can observe changes in the store state, and when the state is changed, your component will be updated.
- 
- * You cannot directly mutate the store's **state**. The only way to change a store's state is by explicitly dispatching mutations.
+ * The Store are **Imutable**. riotux creates a copy of your Store and all modifications  happens in the copy of your original Store.
+
+ * When some changes happens in the copy of your original Store, your component can observe and can be notified.
 
 Creating a riotux store is pretty straightforward - just provide an initial state object, and some mutations:
 
@@ -55,9 +56,9 @@ var store = riotux.Store({
     count: 1,
     title: 'riotux is nice!'
   },
-  mutations: {  
+  mutations: {
     increment: function ( state ) {
-      state.count += 1; 
+      state.count += 1;
     },
     changeTitle: function ( state, newTitle ) {
       state.title = newTitle;
@@ -70,7 +71,7 @@ var store = riotux.Store({
 Application state is held in the store, as a single object. **riotux** uses a **single state tree** - that is, this single object contains all your application level state and serves as the *"single source of truth"*. This also means usually you will have only one store for each application.
 
 #### Observe state changes in your Component
-> When some state change in your store, your handler function will called. 
+> When some state change in your store, your handler function will called.
 
 In your **Component** you just use ``` riotux.subscribe(component, [states], handler) ```. In your hanlder function, you can update your component. **Your handler recieves two arguments: the state name that was changed and the new state value.**
 
@@ -103,7 +104,7 @@ var store = riotux.Store({
   state: {
     count: 1,
   },
-  mutations: {  
+  mutations: {
     increment: function ( state ) {
       state.count += 1;
     }
@@ -124,7 +125,7 @@ var store = riotux.Store({
   state: {
     count: 1,
   },
-  mutations: {  
+  mutations: {
     increment: function ( state, value ) {
       state.count += value;
     }
@@ -142,7 +143,7 @@ var action = riotux.Actions({
   add: function ( store, number ) {
     store.dispatch('increment', number);
   }
-}); 
+});
 ```
 #### Calling an action on your component
 
@@ -152,8 +153,12 @@ var action = riotux.Actions({
 
 The ```action``` recieves the **state** that you wants to change as first argument, the ***mutation event name** as the second argument and the values you nedd to pass like arguments to the mutation callback.
 
-### Getter
-To get the state value, use ```riotux.getter(sate_name)``` in your Components.
+### Get the Mutable state
+To get the state value of the Store copy, use ```riotux.getter(state_name)``` in your Components. This will return the value
+of your muttable store.
+
+### Get the Immutable state
+To get the original Store state value, use ```riotux.immutable(state_name)``` in your Components.
 
 ### Application Structure
 Just suggesting.
@@ -178,12 +183,14 @@ Just suggesting.
 
 * #### Component:
   * ``` riotux.subscribe(component, [states], handler( state_name, value )) ```: Subscribe your component to observe the state changes. Every time the state that your component are observing, the handler function will called. In the handle function you can update your component. The ``` handler ``` recieves as first argument the state name that was changed and the value of the state as second argument.
-  
+
   * ``` riotux.unsubscribe(component) ```: Unsubscribe your component. Your component don't observe the states changes anymore.
-  
+
   * ``` riotux.action('state', 'event_name' [,args]) ```: Trigger the action for call the mutation store function. The ``` state ``` is the name of state that you wants to change. ``` event_name ``` is the mutation function name and you can pass tha arguments after the ``` event_name ```.
-  
+
   * ``` riotux.getter(state) ```: Gets a value of the state that you passed as argument.
+  
+  * ``` riotux.immutable(state) ```: Gets a value of the original state that you passed as argument.
 
 
 ### License

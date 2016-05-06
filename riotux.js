@@ -152,9 +152,16 @@
       },
       /**
        * @name getter
-       * @param  { string } name The name of Immutable state
+       * @param  { string } name The name of Muttable state
        */
       getter: function ( name ) {
+        return _state_muttable[name];
+      },
+      /**
+       * @name getter
+       * @param  { string } name The name of Immutable state
+       */
+      immutable: function ( name ) {
         return _store_immutable.state[name];
       }
     };
