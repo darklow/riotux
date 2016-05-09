@@ -10,28 +10,42 @@
     + Documentation: https://github.com/luisvinicius167/riotux
   */
     'use strict';
-    
+    /**
+     * @name iterate
+     * @description Iterate inside the Store state
+     */
+    function iterate ( obj, name_property ) {
+      for ( var property in obj ) {
+        if (property === name_property ) {
+          return property;
+        } else if (typeof obj[property] === "object") {
+          Object.keys(obj[property]).forEach(function( el ) {
+            if (typeof obj[property][el] === "object" && !(obj[property][el] instanceof  Array) ) {
+              iterate(obj[property][el], name_property);
+            }
+          })
+        }
+      }
+    };
     /**
      * @name  _currentState
      * @description The current state for state that will be changed
      */
-    var _currentState
-      , _state_muttable // the copy of immutable state from store
-    ;
+    var _currentState;
     /**
      * @name  the store state and mutations
      * @type { Object }
      */
-    var _store_immutable = {
+    var _store = {
       dispatch: function ( name ) {
         var _slice = Array.prototype.slice.call(arguments, 1)
-          , state = [_state_muttable]
+          , state = [_store.state]
           , args = state.concat(_slice)
         ;
         return Promise
-          .resolve(_store_immutable.mutations[name].apply(null, args))
+          .resolve(_store.mutations[name].apply(null, args))
           .then(function ( ) {
-            _store_immutable.update();
+            _store.update();
           });
         },
       /**
@@ -47,7 +61,7 @@
        * @param  { array } states Array that contain the states
        */
       subscribe: function ( component, states, handler ) {
-        _store_immutable.tags.push({ component: component, states: states, handler:handler });
+        _store.tags.push({ component: component, states: states, handler:handler });
       },
       /**
        * @name  unsubscribe
@@ -55,9 +69,9 @@
        * @param  { Component instance } tag Your component
        */
       unsubscribe: function ( tag ) {
-        _store_immutable.tags.forEach(function( el, i ) { 
+        _store.tags.forEach(function( el, i ) { 
           if ( el.component === tag ) {
-            _store_immutable.tags.splice(i, 1);
+            _store.tags.splice(i, 1);
           }
         });
       },
@@ -66,10 +80,10 @@
        * @description Execute the component handler, because the state changed
        */
       update: function ( ) {
-        _store_immutable.tags.forEach(function ( el, index, arr ) {
+        _store.tags.forEach(function ( el, index, arr ) {
           if ( el.states.indexOf(_currentState) !== -1 ) {
             if (typeof el.handler === "function") {
-              el.handler( _currentState, _state_muttable[_currentState] );
+              el.handler( _currentState, _store.state[_currentState] );
             }
           }
         });
@@ -89,10 +103,6 @@
     };
 
     riotux.prototype = {
-      listen: function ( callback ) {
-        _store_immutable.addListener( callback );
-      },
-
       /**
        * @name subscribe
        * @description subscribe the tag to update when the states changes
@@ -101,7 +111,7 @@
        * @param { Function } handler The function that you use to update your component when the each state change
        */
       subscribe: function ( component, states, handler ) {
-        _store_immutable.subscribe(component, states, handler);
+        _store.subscribe(component, states, handler);
       },
       /**
        * @name unsubscribe
@@ -109,7 +119,7 @@
        * @param  { string } component The Component instance
        */
       unsubscribe: function ( component ) {
-        _store_immutable.unsubscribe(component);
+        _store.unsubscribe(component);
       },
       /**
        * @name Store
@@ -117,8 +127,7 @@
        * @return { object } Return the store
        */
       Store: function ( data ) {
-        _store_immutable = Object.assign(_store_immutable, data);
-        _state_muttable = Object.assign({}, _store_immutable.state);
+        _store = Object.assign(_store, data);
       },  
       /**
        * @name  Actions
@@ -135,14 +144,18 @@
        * @return { void }
        */
       action: function ( ) {
-        _currentState = arguments[0];
+        var states = arguments[0].split(':');
+        
+        // last state
+        _currentState = states[states.length-1];
         
         // pass just the method dispatch to action
-        var store_to_action = { dispatch: _store_immutable.dispatch }
+        var store_to_action = { dispatch: _store.dispatch }
           , store = [store_to_action]
           , args
         ;
-        if (_store_immutable.state[_currentState] !== undefined ) {
+        
+        if ( iterate(_store.states, _currentState) !== undefined ) {
           args = store.concat(Array.prototype.slice.call(arguments, 2));
           this.actions[arguments[1]].apply(null, args);
         } else {
@@ -152,18 +165,35 @@
       },
       /**
        * @name getter
-       * @param  { string } name The name of Muttable state
+       * @param  { string } name The name of state
        */
       getter: function ( name ) {
-        return _state_muttable[name];
-      },
-      /**
-       * @name getter
-       * @param  { string } name The name of Immutable state
-       */
-      immutable: function ( name ) {
-        return _store_immutable.state[name];
+        return _store.state[name];
       }
     };
     return new riotux;
   });
+  
+  
+  //tests
+  var store = riotux.Store({
+  	state: {
+  		names: {
+  			count: 1
+  		},
+  		value: 'one'
+  	},
+  	mutations: {
+  		increment: function ( state, n) {
+  			state.count +=n;
+  		}
+  	}
+  });
+  
+  riotux.Actions({
+  	increment: function (store, n ){
+  		store.dispatch('increment', n);
+  	}
+  });
+  
+  console.log(riotux)
