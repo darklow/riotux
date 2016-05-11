@@ -1,4 +1,4 @@
-  !function(e,n){"function"==typeof define&&define.amd?define([],n):"undefined"!=typeof module?module.exports=n:e.riotux=n()}(this,
+!function(e,n){"function"==typeof define&&define.amd?define([],n):"undefined"!=typeof module?module.exports=n:e.riotux=n()}(this,
    function ( ) {
     /*!
     --------------------------------
@@ -10,28 +10,16 @@
     + Documentation: https://github.com/luisvinicius167/riotux
   */
     'use strict';
-    /**
-     * @name iterate
-     * @description Iterate inside the Store state
-     */
-    function iterate ( obj, name_property ) {
-      for ( var property in obj ) {
-        if (property === name_property ) {
-          return property;
-        } else if (typeof obj[property] === "object") {
-          Object.keys(obj[property]).forEach(function( el ) {
-            if (typeof obj[property][el] === "object" && !(obj[property][el] instanceof  Array) ) {
-              iterate(obj[property][el], name_property);
-            }
-          })
-        }
-      }
-    };
+    
     /**
      * @name  _currentState
      * @description The current state for state that will be changed
      */
     var _currentState;
+    /**
+     * Containers
+     */
+    var _container = [];
     /**
      * @name  the store state and mutations
      * @type { Object }
@@ -99,9 +87,9 @@
        * @description All actions for components call
        * @type {Object}
        */
-      this.actions = {};
-    };
-
+      this.actions = {}
+    }
+    
     riotux.prototype = {
       /**
        * @name subscribe
@@ -128,7 +116,26 @@
        */
       Store: function ( data ) {
         _store = Object.assign(_store, data);
-      },  
+      },
+      /**
+       * Container that works with the Store state
+       * 
+       */ 
+      Container: function ( data ){
+      	_container.push(data);
+      },
+      getContainer: function ( name ) {
+      	var container;
+      	_container.forEach(function ( el ) {
+      		if ( el.name === name ) {
+      			container = el;
+      		}
+      	});
+      	return container;
+      },
+      getter: function ( container, value ) {
+	    return this.getContainer(container).state[value];
+      },
       /**
        * @name  Actions
        * @param  { object } data The data that contain all actions
@@ -144,18 +151,13 @@
        * @return { void }
        */
       action: function ( ) {
-        var states = arguments[0].split(':');
-        
-        // last state
-        _currentState = states[states.length-1];
-        
+        _currentState = arguments[0];
         // pass just the method dispatch to action
         var store_to_action = { dispatch: _store.dispatch }
           , store = [store_to_action]
           , args
         ;
-        
-        if ( iterate(_store.states, _currentState) !== undefined ) {
+        if (_store.state[_currentState] !== undefined ) {
           args = store.concat(Array.prototype.slice.call(arguments, 2));
           this.actions[arguments[1]].apply(null, args);
         } else {
@@ -167,33 +169,60 @@
        * @name getter
        * @param  { string } name The name of state
        */
-      getter: function ( name ) {
+      getState: function ( name ) {
         return _store.state[name];
       }
     };
     return new riotux;
   });
   
-  
-  //tests
+  // Store
   var store = riotux.Store({
+  state: {
+    count: 1,
+    counter: 1,
+  },
+  mutations: {
+    increment: function ( state, n ) {
+      state.count += n;
+    },
+    increment_counter: function ( state, n ) {
+      state.counter += n;
+      console.log('State #counter changed.');
+    },
+    add: function ( state, a, b ) {
+      return a + b;
+    }
+  }
+});
+
+ // Container
+ riotux.Container({
+  	name: 'API',
+  	
   	state: {
-  		names: {
-  			count: 1
-  		},
-  		value: 'one'
+  		count_value: riotux.getState('count')
   	},
-  	mutations: {
-  		increment: function ( state, n) {
-  			state.count +=n;
-  		}
-  	}
+  	
+  	count: function ( state, n ) {
+  		this.state.count_value = state + n;
+  		return this.state.count_value;
+  	},
   });
   
-  riotux.Actions({
-  	increment: function (store, n ){
-  		store.dispatch('increment', n);
-  	}
+   // Container
+ riotux.Container({
+  	name: 'Cart',
+  	
+  	state: {
+  		api: riotux.getState('count')
+  	},
+  	
+  	count: function ( state, n ) {
+  		this.state.count_value = state + n;
+  		return this.state.count_value;
+  	},
   });
   
-  console.log(riotux)
+ console.log(riotux.getContainer('API').count(riotux.getState('count') , 2));
+ console.log(riotux.getter('API', 'count_value'), riotux.getState('count'))
